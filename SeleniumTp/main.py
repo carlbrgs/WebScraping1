@@ -92,21 +92,23 @@ def main():
             text_elements = result.find_elements(By.CSS_SELECTOR, "[data-design-system-component='Text'], [data-design-system-component='Paragraph']")
             print(f"Éléments trouvés pour le résultat {i + 1}: {[el.text for el in text_elements]}")
 
-            if len(text_elements) == 5:
-                name = text_elements[0].text.strip()  # Nom
-                address_part1 = text_elements[2].text.strip() if len(text_elements) > 2 else "Adresse non disponible"
-                address_part2 = text_elements[3].text.strip() if len(text_elements) > 3 else ""
-                secteur = text_elements[4].text.strip() if len(text_elements) > 4 else "Secteur non disponible"
-                print(f"{i + 1}. {name} - {address_part1}, {address_part2} - Secteur: {secteur}")
-            elif len(text_elements) == 6:
-                name = text_elements[0].text.strip()  # Nom
-                address_part1 = text_elements[2].text.strip() if len(text_elements) > 2 else "Adresse non disponible"
-                address_part2 = text_elements[3].text.strip() if len(text_elements) > 3 else ""
-                address_part3 = text_elements[4].text.strip() if len(text_elements) > 4 else ""
-                secteur = text_elements[5].text.strip() if len(text_elements) > 5 else "Secteur non disponible"
-                print(f"{i + 1}. {name} - {address_part1}, {address_part2}, {address_part3} - Secteur: {secteur}")
-            else:
-                print(f"{i + 1}. Informations insuffisantes pour ce résultat.")
+            name = text_elements[0].text.strip()  # Le premier élément est le nom
+            address_parts = []
+            secteur = "Secteur non disponible"
+
+            for el in text_elements[1:]:  # Parcourir les éléments restants
+                text = el.text.strip()
+                if "RDV" in text:  # Ignorer les résultats contenant "RDV"
+                    print(f"{i + 1}. Résultat ignoré (contient 'RDV').")
+                    break
+                if "Conventionné" in text.lower():  # Si le texte contient "conventionné", c'est le secteur
+                    secteur = text
+                elif any(char.isdigit() for char in text):  # Si le texte contient des chiffres, c'est une partie de l'adresse
+                    address_parts.append(text)
+
+            else:  # Si on n'a pas rencontré "RDV", afficher les informations
+                address = ", ".join(address_parts) if address_parts else "Adresse non disponible"
+                print(f"{i + 1}. {name} - {address} - Secteur: {secteur}")
 
         except Exception as e:
             print(f"Erreur lors de l'extraction des informations pour le résultat {i + 1}: {e}")
