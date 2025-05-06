@@ -4,9 +4,28 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
 import time
+import csv
+
+# Fonction pour écrire les données dans un fichier CSV
+def write_to_csv(filename, data):
+    # Vérifier si le fichier existe déjà
+    file_exists = False
+    try:
+        with open(filename, 'r', newline='', encoding='utf-8') as file:
+            file_exists = True
+    except FileNotFoundError:
+        pass
+
+    # Ouvrir le fichier en mode ajout
+    with open(filename, 'a', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        # Écrire l'en-tête si le fichier est nouveau
+        if not file_exists:
+            writer.writerow(["Doctor", "Adress", "Convention"])
+        # Écrire les données
+        writer.writerow(data)
 
 # Fonction principale
 def main():
@@ -24,13 +43,11 @@ def main():
         driver.get("https://www.doctolib.fr/")
 
         refuseBtn = wait.until(
-            EC.element_to_be_clickable((By.ID,
-                "didomi-notice-disagree-button")))
-        
+            EC.element_to_be_clickable((By.ID, "didomi-notice-disagree-button"))
+        )
         refuseBtn.click()
 
-        wait.until(EC.invisibility_of_element_located((By.ID,
-                "didomi-notice-disagree-button")))
+        wait.until(EC.invisibility_of_element_located((By.ID, "didomi-notice-disagree-button")))
     except Exception as e:
         print(f"Erreur lors du chargement de la page ou du traitement du bouton : {e}")
 
@@ -78,7 +95,7 @@ def main():
     ))
     print(f"Nombre total de résultats trouvés : {len(results)}")
 
-    for i in range(min(max_results, len(results))):
+    for i in range(len(results) if len(results) < max_results else max_results):
         try:
             # Recharger les résultats après chaque interaction
             results = wait.until(EC.presence_of_all_elements_located(
@@ -109,6 +126,9 @@ def main():
             else:  # Si on n'a pas rencontré "RDV", afficher les informations
                 address = ", ".join(address_parts) if address_parts else "Adresse non disponible"
                 print(f"{i + 1}. {name} - {address} - Secteur: {secteur}")
+
+                # Ajouter les données dans le fichier CSV
+                write_to_csv("doctor.csv", [name, address, secteur])
 
         except Exception as e:
             print(f"Erreur lors de l'extraction des informations pour le résultat {i + 1}: {e}")
